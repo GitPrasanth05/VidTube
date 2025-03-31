@@ -29,7 +29,7 @@ const UserSchema = new Schema(
     },
     coverImage: {
       type: String, //cloudinary url
-      required: true,
+      required: false,
     },
     watchHistory: [
       {
@@ -48,10 +48,22 @@ const UserSchema = new Schema(
   { timestamps: true }
 );
 
+/*
+
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next(); // if the password is not modified then return next     //here this line is added as without this anything modified will again and again change the password value
 
   this.password = bcrypt.hash(this.password, 10); // this is the password that is being hashed
+
+  next(); // this next should be used as it passes to next middleware
+});*/
+
+UserSchema.pre("save", async function (next) {
+  if (this.isNew || this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10); // this is the password that is being hashed
+  }
+
+  // return next(); // if the password is not modified then return next     //here this line is added as without this anything modified will again and again change the password value
 
   next(); // this next should be used as it passes to next middleware
 });
@@ -74,7 +86,7 @@ UserSchema.methods.generateAccessToken = function () {
   );
 };
 
-UserSchema.methods.generateAccessToken = function () {
+UserSchema.methods.generateRefreshToken = function () {
   //short time access token
   return jwt.sign(
     {
